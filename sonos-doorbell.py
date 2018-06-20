@@ -53,7 +53,7 @@ def on_doorbell(root_path, audio_file, volume, zone):
     global doorbell_playing
         
     http_path = root_path + "/" + audio_file.url
-    print('on_doorbell {} {} {}'.format(audio_file.name, volume, zone)
+    print('on_doorbell {} {} {}'.format(audio_file.name, volume, zone))
     if is_doorbell_busy():
         print('Doorbell already playing...suppressing')
         return        
