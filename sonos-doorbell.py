@@ -159,8 +159,9 @@ def get_server(port, retry_bind, serve_path=None):
                 raise
 
 def get_zone(zone_name):
+    import re
     devices = discover()
-    cache_name = "{}_last_known_ip.txt".format(zone_name)
+    cache_name = "{}_ip.txt".format(zone_name)
     if devices:
         for device in devices:
             if device.player_name == zone_name:
@@ -171,18 +172,22 @@ def get_zone(zone_name):
                 f.write(device.ip_address)
                 f.close()
                 return device
+    if not devices or len(devices) == 0:
+        print("WARNING: No devices found through discover.")
     # Device not found, try be known IP
     try:        
         if os.path.isfile(cache_name) and os.access(cache_name, os.R_OK):
             f = open(cache_name,"r")
-            ip_address = f.readline()
+            line = f.readline()
+            ip_address = re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', line).group()
             f.close()
-            print("Using cached IP:{} for zone:".format(ip_address, zone_name))
+            print("Using cached IP:{} for zone:{}".format(ip_address, zone_name))
             device = SoCo(ip_address)            
             return device
         else:
             print("No cached record for zone")
     except:
+        print("Exception reading cached record")
         return None
    
     
@@ -250,6 +255,12 @@ def main():
 
     # Check whether the zone is a coordinator (stand alone zone or master of a group)
     if not zone.is_coordinator:
+        if not zone.group:
+            print("This Zone does not belong to a valid group")
+            sys.exit(2)
+        if not zone.group.coordinator:
+            print("The Zone '{}' has no coordinator. Cannot play music")
+            sys.exit(2)
         print("The zone '{}' is not a group master, and therefore cannot "
               "play music. Please use '{}' in stead"\
               .format(args.zone, zone.group.coordinator.player_name))
